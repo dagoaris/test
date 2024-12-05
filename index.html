@@ -1,0 +1,903 @@
+<!DOCTYPE html>  
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Inventario Hobbit</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Librería para escanear QR Codes -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        /* Variables CSS para la paleta de colores */
+        :root {
+            --color-primario: #4CAF50;
+            --color-secundario: #2196F3;
+            --color-acento: #FFC107;
+            --color-fondo: #f9f9f9;
+            --color-blanco: #ffffff;
+            --color-negro: #333333;
+            --color-gris-claro: #f2f2f2;
+            --color-gris: #ddd;
+            --color-error: #f44336;
+            --color-ingreso: #4CAF50;
+            --color-gasto: #f44336;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: var(--color-fondo);
+            color: var(--color-negro);
+        }
+
+        h1 {
+            color: var(--color-secundario);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        /* Estilos del buscador */
+        #search-container {
+            margin-bottom: 25px;
+        }
+
+        #search-container input[type="text"] {
+            padding: 10px;
+            width: 300px;
+            max-width: 90%;
+            border: 1px solid var(--color-gris);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        #search-container input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-secundario);
+            box-shadow: 0 0 5px var(--color-secundario);
+        }
+
+        /* Estilos del formulario para agregar productos */
+        #form-producto {
+            margin-bottom: 30px;
+        }
+
+        #form-producto input[type="text"],
+        #form-producto input[type="number"] {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid var(--color-gris);
+            border-radius: 20px;
+            width: 200px;
+            max-width: 90%;
+            transition: all 0.3s ease;
+        }
+
+        #form-producto input[type="text"]:focus,
+        #form-producto input[type="number"]:focus {
+            outline: none;
+            border-color: var(--color-secundario);
+            box-shadow: 0 0 5px var(--color-secundario);
+        }
+
+        #form-producto button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background-color: var(--color-primario);
+            color: var(--color-blanco);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        #form-producto button:hover {
+            background-color: #45a049;
+        }
+
+        /* Estilos de la tabla */
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 90%;
+            max-width: 1000px;
+            background-color: var(--color-blanco);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            border: 1px solid var(--color-gris);
+            padding: 15px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--color-secundario);
+            color: var(--color-blanco);
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--color-gris-claro);
+        }
+
+        /* Estilos de los contenedores */
+        .formulario-actualizar, .backup-container, .formulario-financiero {
+            margin-top: 30px;
+            padding: 25px;
+            border: 1px solid var(--color-gris);
+            display: inline-block;
+            border-radius: 15px;
+            background-color: var(--color-blanco);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .formulario-actualizar:hover, .backup-container:hover, .formulario-financiero:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .formulario-actualizar h3, .backup-container h3, .formulario-financiero h3 {
+            color: var(--color-primario);
+            margin-bottom: 15px;
+        }
+
+        .formulario-actualizar input[type="text"],
+        .formulario-actualizar input[type="number"],
+        .formulario-actualizar select,
+        .formulario-financiero input[type="text"],
+        .formulario-financiero input[type="number"],
+        .formulario-financiero select {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid var(--color-gris);
+            border-radius: 20px;
+            width: 220px;
+            max-width: 90%;
+            transition: all 0.3s ease;
+        }
+
+        .formulario-actualizar input[type="text"]:focus,
+        .formulario-actualizar input[type="number"]:focus,
+        .formulario-actualizar select:focus,
+        .formulario-financiero input[type="text"]:focus,
+        .formulario-financiero input[type="number"]:focus,
+        .formulario-financiero select:focus {
+            outline: none;
+            border-color: var(--color-secundario);
+            box-shadow: 0 0 5px var(--color-secundario);
+        }
+
+        .formulario-actualizar button,
+        .formulario-financiero button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 20px;
+            background-color: var(--color-primario);
+            color: var(--color-blanco);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .formulario-actualizar button:hover,
+        .formulario-financiero button:hover {
+            background-color: #3e8e41;
+        }
+
+        .backup-container button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 20px;
+            background-color: var(--color-secundario);
+            color: var(--color-blanco);
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .backup-container button:hover {
+            background-color: #1a73e8;
+        }
+
+        .backup-container input[type="file"] {
+            margin-top: 10px;
+            padding: 5px;
+            border: none;
+            border-radius: 10px;
+            background-color: var(--color-gris-claro);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .backup-container input[type="file"]:hover {
+            background-color: var(--color-gris);
+        }
+
+        /* Estilos de los botones dentro de la tabla */
+        .qr-controls button {
+            margin: 5px 0;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 15px;
+            background-color: var(--color-secundario);
+            color: var(--color-blanco);
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        .qr-controls button:hover {
+            background-color: #1a73e8;
+        }
+
+        .qr-controls button.eliminar {
+            background-color: var(--color-error);
+        }
+
+        .qr-controls button.eliminar:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Estilos de las imágenes QR */
+        .qr img {
+            width: 100px;
+            height: 100px;
+        }
+
+        /* Estilos del módulo financiero */
+        .formulario-financiero select {
+            background-color: var(--color-blanco);
+        }
+
+        .transacciones-financiero {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+            border-collapse: collapse;
+        }
+
+        .transacciones-financiero th, .transacciones-financiero td {
+            border: 1px solid var(--color-gris);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .transacciones-financiero th {
+            background-color: var(--color-acento);
+            color: var(--color-blanco);
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .transacciones-financiero tr:nth-child(even) {
+            background-color: var(--color-gris-claro);
+        }
+
+        .resumen-financiero {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: var(--color-blanco);
+            padding: 15px;
+            border: 1px solid var(--color-gris);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .resumen-financiero h3 {
+            color: var(--color-secundario);
+            margin-bottom: 10px;
+        }
+
+        .resumen-financiero p {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+
+        .resumen-financiero .ingresos {
+            color: var(--color-ingreso);
+        }
+
+        .resumen-financiero .gastos {
+            color: var(--color-gasto);
+        }
+
+        .resumen-financiero .balance {
+            font-weight: bold;
+        }
+
+        /* Estilos de los botones dentro de las tablas financieras */
+        .transacciones-financiero .eliminar-financiero {
+            background-color: var(--color-error);
+            color: var(--color-blanco);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .transacciones-financiero .eliminar-financiero:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Estilos del área de escaneo QR */
+        #qr-reader {
+            width: 300px;
+            margin: 20px auto;
+            display: none; /* Ocultar inicialmente */
+        }
+
+        /* Media Queries para dispositivos móviles */
+        @media (max-width: 768px) {
+            table, .formulario-actualizar, .backup-container, .formulario-financiero, .transacciones-financiero, .resumen-financiero {
+                width: 100%;
+                margin: 10px 0;
+            }
+
+            #search-container input[type="text"],
+            #form-producto input[type="text"],
+            #form-producto input[type="number"],
+            .formulario-actualizar input[type="text"],
+            .formulario-actualizar input[type="number"],
+            .formulario-actualizar select,
+            .formulario-financiero input[type="text"],
+            .formulario-financiero input[type="number"],
+            .formulario-financiero select {
+                width: 90%;
+            }
+
+            .qr img {
+                width: 80px;
+                height: 80px;
+            }
+
+            .resumen-financiero p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión Inventario Hobbit</h1>
+
+    <!-- Buscador de productos -->
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="Buscar Producto por Nombre o ID..." onkeyup="buscarProducto()">
+    </div>
+
+    <!-- Formulario para agregar productos -->
+    <form id="form-producto">
+        <input type="text" id="nombre" placeholder="Nombre del Producto" required>
+        <input type="number" id="cantidad" placeholder="Cantidad Inicial" required min="0">
+        <button type="submit">Agregar Producto</button>
+    </form>
+
+    <!-- Tabla de inventario -->
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Código QR</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-inventario"></tbody>
+    </table>
+
+    <!-- Formulario para actualizar inventario -->
+    <div class="formulario-actualizar">
+        <h3>Actualizar Inventario</h3>
+        <input type="text" id="qr-input" placeholder="Escanea o ingresa el código QR">
+        <button type="button" onclick="iniciarEscaneo()">Escanear QR</button> <!-- Botón para iniciar escaneo -->
+        <div id="qr-reader"></div> <!-- Área del lector QR -->
+        <select id="tipo-movimiento">
+            <option value="" disabled selected>Selecciona Tipo</option>
+            <option value="entrada">Entrada</option>
+            <option value="salida">Salida</option>
+        </select>
+        <input type="number" id="mov-cantidad" placeholder="Cantidad" required min="1">
+        <button type="button" onclick="actualizarInventario()">Actualizar</button>
+    </div>
+
+    <!-- Opciones de Backup -->
+    <div class="backup-container">
+        <h3>Opciones de Backup</h3>
+        <button type="button" onclick="descargarBackup()">Descargar Backup (JSON)</button>
+        <button type="button" onclick="descargarExcel()">Descargar Inventario y Financiero (Excel)</button>
+        <input type="file" id="backup-file" accept=".json" onchange="restaurarBackup(event)">
+    </div>
+
+    <!-- Formulario para Gestión Financiera -->
+    <div class="formulario-financiero">
+        <h3>Gestión Financiera</h3>
+        <select id="tipo-transaccion">
+            <option value="" disabled selected>Selecciona Tipo</option>
+            <option value="ingreso">Ingreso</option>
+            <option value="gasto">Gasto</option>
+        </select>
+        <input type="text" id="descripcion" placeholder="Descripción" required>
+        <input type="number" id="cantidad-financiera" placeholder="Cantidad" required min="0.01" step="0.01">
+        <button type="button" onclick="agregarTransaccion()">Agregar Transacción</button>
+    </div>
+
+    <!-- Tabla de Transacciones Financieras -->
+    <table class="transacciones-financiero">
+        <thead>
+            <tr>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-financiera"></tbody>
+    </table>
+
+    <!-- Resumen Financiero -->
+    <div class="resumen-financiero">
+        <h3>Resumen Financiero</h3>
+        <p class="ingresos">Total Ingresos: $<span id="total-ingresos">0.00</span></p>
+        <p class="gastos">Total Gastos: $<span id="total-gastos">0.00</span></p>
+        <p class="balance">Balance Neto: $<span id="balance-neto">0.00</span></p>
+    </div>
+
+    <!-- Librerías externas -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+
+    <script>
+        // ======== Gestión de Inventario ========
+
+        // Cargar inventario desde localStorage o iniciar vacío
+        let inventario = JSON.parse(localStorage.getItem('inventario')) || [];
+        let idCounter = inventario.length > 0 ? Math.max(...inventario.map(p => p.id)) + 1 : 1;
+
+        // Función para agregar un producto al inventario
+        document.getElementById('form-producto').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const nombre = document.getElementById('nombre').value.trim();
+            const cantidad = parseInt(document.getElementById('cantidad').value);
+
+            if (!nombre || isNaN(cantidad) || cantidad < 0) {
+                alert('Por favor, ingresa un nombre y una cantidad válidos.');
+                return;
+            }
+
+            const productoExistente = inventario.find(item => item.nombre.toLowerCase() === nombre.toLowerCase());
+            if (productoExistente) {
+                alert('Ya existe un producto con el mismo nombre.');
+                return;
+            }
+
+            const qrCode = `208ID${idCounter}${nombre.replace(/\s+/g, '')}`;
+            inventario.push({ id: idCounter, nombre, cantidad, qrCode });
+            idCounter++;
+
+            localStorage.setItem('inventario', JSON.stringify(inventario));
+            actualizarTabla();
+            document.getElementById('nombre').value = '';
+            document.getElementById('cantidad').value = '';
+        });
+
+        // Función para actualizar la tabla de inventario
+        function actualizarTabla(productos = inventario) {
+            const tabla = document.getElementById('tabla-inventario');
+            tabla.innerHTML = '';
+
+            // Ordenar los productos alfabéticamente por nombre
+            const productosOrdenados = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            productosOrdenados.forEach((producto) => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${producto.nombre}</td>
+                    <td>${producto.cantidad}</td>
+                    <td>
+                        <div class="qr" id="qr-${producto.id}"></div>
+                        <p><strong>ID:</strong> ${producto.qrCode} <button onclick="copiarID('${producto.qrCode}')">Copiar ID</button></p>
+                        <div class="qr-controls">
+                            <button onclick="descargarQR(${producto.id})">Descargar QR</button>
+                            <br><br>
+                            <button class="eliminar" onclick="eliminarProducto(${producto.id})">Eliminar Producto</button>
+                        </div>
+                    </td>
+                `;
+                tabla.appendChild(fila);
+
+                // Generar QR para cada producto
+                const qrContainer = document.getElementById(`qr-${producto.id}`);
+                QRCode.toDataURL(producto.qrCode, { width: 150 }, function (error, url) {
+                    if (!error) {
+                        qrContainer.innerHTML = `<img src="${url}" alt="QR Code" id="qr-img-${producto.id}">`;
+                    } else {
+                        qrContainer.innerHTML = 'Error al generar QR';
+                        console.error('Error generando QR:', error);
+                    }
+                });
+            });
+        }
+
+        // Función para copiar el ID al portapapeles
+        function copiarID(id) {
+            navigator.clipboard.writeText(id).then(() => {
+                alert('ID copiado al portapapeles: ' + id);
+            }).catch(err => {
+                alert('Error al copiar el ID: ' + err);
+            });
+        }
+
+        // Función para actualizar el inventario
+        function actualizarInventario() {
+            const qrCodeInput = document.getElementById('qr-input').value.trim();
+            const movimientoTipo = document.getElementById('tipo-movimiento').value;
+            const cantidadMovimiento = parseInt(document.getElementById('mov-cantidad').value);
+
+            // Validaciones
+            if (!qrCodeInput || isNaN(cantidadMovimiento) || cantidadMovimiento <= 0) {
+                alert('Por favor, ingresa un código QR válido y una cantidad válida.');
+                return;
+            }
+
+            const producto = inventario.find(item => item.qrCode === qrCodeInput);
+            if (!producto) {
+                alert('Producto no encontrado.');
+                return;
+            }
+
+            // Actualizar cantidad según el tipo de movimiento
+            if (movimientoTipo === 'entrada') {
+                producto.cantidad += cantidadMovimiento;
+            } else if (movimientoTipo === 'salida') {
+                if (producto.cantidad < cantidadMovimiento) {
+                    alert('No hay suficiente cantidad en inventario.');
+                    return;
+                }
+                producto.cantidad -= cantidadMovimiento;
+            }
+
+            // Guardar los cambios en el inventario
+            localStorage.setItem('inventario', JSON.stringify(inventario));
+            actualizarTabla();
+
+            // Limpiar los campos del formulario de actualización
+            document.getElementById('qr-input').value = '';
+            document.getElementById('mov-cantidad').value = '';
+        }
+
+        // Función para buscar productos por nombre o ID
+        function buscarProducto() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const productosFiltrados = inventario.filter(producto => 
+                producto.nombre.toLowerCase().includes(query) || 
+                producto.qrCode.toLowerCase().includes(query)
+            );
+            actualizarTabla(productosFiltrados);
+        }
+
+        // Función para descargar el código QR como imagen con ID y Nombre
+        function descargarQR(id) {
+            const producto = inventario.find(p => p.id === id);
+            if (producto) {
+                const qrImg = document.getElementById(`qr-img-${producto.id}`);
+
+                if (qrImg) {
+                    // Crear un canvas
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Definir dimensiones
+                    const qrSize = 200; // Tamaño del QR
+                    const padding = 20; // Espacio para el texto
+                    const fontSize = 16; // Tamaño de la fuente
+
+                    canvas.width = qrSize;
+                    canvas.height = qrSize + padding + fontSize * 2 + 10; // Ajustar altura para el texto
+
+                    // Dibujar el QR en el canvas
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous"; // Evita problemas de CORS
+                    img.src = qrImg.src;
+                    img.onload = function() {
+                        // Dibujar QR
+                        ctx.drawImage(img, 0, 0, qrSize, qrSize);
+
+                        // Configurar texto
+                        ctx.font = `${fontSize}px Arial`;
+                        ctx.fillStyle = '#000';
+                        ctx.textAlign = 'center';
+
+                        // Dibujar ID
+                        ctx.fillText(`ID: ${producto.qrCode}`, qrSize / 2, qrSize + fontSize + 5);
+
+                        // Dibujar Nombre del Producto
+                        ctx.fillText(`Nombre: ${producto.nombre}`, qrSize / 2, qrSize + fontSize * 2 + 10);
+
+                        // Convertir el canvas a Data URL
+                        const finalImageURL = canvas.toDataURL('image/png');
+
+                        // Descargar la imagen
+                        const a = document.createElement('a');
+                        a.href = finalImageURL;
+                        a.download = `${producto.qrCode}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    img.onerror = function() {
+                        alert('Error al cargar la imagen del QR.');
+                        console.error('Error al cargar la imagen del QR.');
+                    };
+                } else {
+                    alert('El código QR aún no se ha generado.');
+                }
+            } else {
+                alert('Producto no encontrado.');
+            }
+        }
+
+        // Función para eliminar un producto
+        function eliminarProducto(id) {
+            const index = inventario.findIndex(producto => producto.id === id);
+            if (index !== -1) {
+                if (confirm(`¿Estás seguro de que deseas eliminar el producto "${inventario[index].nombre}"?`)) {
+                    inventario.splice(index, 1);
+                    localStorage.setItem('inventario', JSON.stringify(inventario));
+                    actualizarTabla();
+                }
+            } else {
+                alert('Producto no encontrado.');
+            }
+        }
+
+        // ======== Gestión Financiera ========
+
+        // Cargar transacciones desde localStorage o iniciar vacío
+        let transacciones = JSON.parse(localStorage.getItem('financiero')) || [];
+        let idTransaccionCounter = transacciones.length > 0 ? Math.max(...transacciones.map(t => t.id)) + 1 : 1;
+
+        // Función para agregar una transacción financiera
+        function agregarTransaccion() {
+            const tipo = document.getElementById('tipo-transaccion').value;
+            const descripcion = document.getElementById('descripcion').value.trim();
+            const cantidad = parseFloat(document.getElementById('cantidad-financiera').value);
+
+            if (!tipo || !descripcion || isNaN(cantidad) || cantidad <= 0) {
+                alert('Por favor, completa todos los campos con valores válidos.');
+                return;
+            }
+
+            const transaccion = {
+                id: idTransaccionCounter,
+                tipo: tipo, // 'ingreso' o 'gasto'
+                descripcion: descripcion,
+                cantidad: cantidad
+            };
+
+            transacciones.push(transaccion);
+            idTransaccionCounter++;
+
+            localStorage.setItem('financiero', JSON.stringify(transacciones));
+            actualizarTablaFinanciera();
+            actualizarResumenFinanciero();
+
+            // Limpiar los campos del formulario
+            document.getElementById('tipo-transaccion').selectedIndex = 0;
+            document.getElementById('descripcion').value = '';
+            document.getElementById('cantidad-financiera').value = '';
+        }
+
+        // Función para actualizar la tabla financiera
+        function actualizarTablaFinanciera() {
+            const tablaFinanciera = document.getElementById('tabla-financiera');
+            tablaFinanciera.innerHTML = '';
+
+            // Ordenar las transacciones por ID descendente
+            const transaccionesOrdenadas = [...transacciones].sort((a, b) => b.id - a.id);
+
+            transaccionesOrdenadas.forEach((transaccion) => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${transaccion.tipo.charAt(0).toUpperCase() + transaccion.tipo.slice(1)}</td>
+                    <td>${transaccion.descripcion}</td>
+                    <td>$${transaccion.cantidad.toFixed(2)}</td>
+                    <td>
+                        <button class="eliminar-financiero" onclick="eliminarTransaccion(${transaccion.id})">Eliminar</button>
+                    </td>
+                `;
+                tablaFinanciera.appendChild(fila);
+            });
+        }
+
+        // Función para eliminar una transacción financiera
+        function eliminarTransaccion(id) {
+            const index = transacciones.findIndex(transaccion => transaccion.id === id);
+            if (index !== -1) {
+                if (confirm(`¿Estás seguro de que deseas eliminar esta transacción?`)) {
+                    transacciones.splice(index, 1);
+                    localStorage.setItem('financiero', JSON.stringify(transacciones));
+                    actualizarTablaFinanciera();
+                    actualizarResumenFinanciero();
+                }
+            } else {
+                alert('Transacción no encontrada.');
+            }
+        }
+
+        // Función para actualizar el resumen financiero
+        function actualizarResumenFinanciero() {
+            const totalIngresos = transacciones
+                .filter(t => t.tipo === 'ingreso')
+                .reduce((acc, curr) => acc + curr.cantidad, 0);
+
+            const totalGastos = transacciones
+                .filter(t => t.tipo === 'gasto')
+                .reduce((acc, curr) => acc + curr.cantidad, 0);
+
+            const balanceNeto = totalIngresos - totalGastos;
+
+            document.getElementById('total-ingresos').innerText = totalIngresos.toFixed(2);
+            document.getElementById('total-gastos').innerText = totalGastos.toFixed(2);
+            document.getElementById('balance-neto').innerText = balanceNeto.toFixed(2);
+        }
+
+        // Inicializar la tabla financiera y el resumen al cargar la página
+        actualizarTablaFinanciera();
+        actualizarResumenFinanciero();
+
+        // ======== Funciones de Backup ========
+
+        // Función para descargar el backup como archivo JSON
+        function descargarBackup() {
+            const backupData = {
+                inventario: inventario,
+                financiero: transacciones
+            };
+            const jsonContent = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonContent], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'backup_gestion_inventario_hobbit.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Función para restaurar el backup desde un archivo JSON
+        function restaurarBackup(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                alert('No se seleccionó ningún archivo.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    if (backupData && Array.isArray(backupData.inventario) && Array.isArray(backupData.financiero)) {
+                        // Validar estructura de los datos
+                        const inventarioValido = backupData.inventario.every(item => 
+                            typeof item.id === 'number' &&
+                            typeof item.nombre === 'string' &&
+                            typeof item.cantidad === 'number' &&
+                            typeof item.qrCode === 'string'
+                        );
+
+                        const financieroValido = backupData.financiero.every(item => 
+                            typeof item.id === 'number' &&
+                            (item.tipo === 'ingreso' || item.tipo === 'gasto') &&
+                            typeof item.descripcion === 'string' &&
+                            typeof item.cantidad === 'number'
+                        );
+
+                        if (inventarioValido && financieroValido) {
+                            inventario = backupData.inventario;
+                            transacciones = backupData.financiero;
+                            // Actualizar los contadores de ID para evitar duplicados
+                            idCounter = inventario.length > 0 ? Math.max(...inventario.map(p => p.id)) + 1 : 1;
+                            idTransaccionCounter = transacciones.length > 0 ? Math.max(...transacciones.map(t => t.id)) + 1 : 1;
+                            localStorage.setItem('inventario', JSON.stringify(inventario));
+                            localStorage.setItem('financiero', JSON.stringify(transacciones));
+                            actualizarTabla();
+                            actualizarTablaFinanciera();
+                            actualizarResumenFinanciero();
+                            alert('Backup restaurado exitosamente.');
+                        } else {
+                            alert('El archivo no contiene un formato válido.');
+                        }
+                    } else {
+                        alert('El archivo no contiene un formato válido.');
+                    }
+                } catch (error) {
+                    alert('Error al restaurar el backup: ' + error.message);
+                    console.error('Error al restaurar el backup:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Función para descargar inventario y financiero como archivo Excel
+        function descargarExcel() {
+            if (inventario.length === 0 && transacciones.length === 0) {
+                alert('No hay datos en el inventario ni en financiero para descargar.');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            // Añadir hoja de Inventario si hay datos
+            if (inventario.length > 0) {
+                const datosInventario = inventario.map(({ id, ...rest }) => rest);
+                const wsInventario = XLSX.utils.json_to_sheet(datosInventario);
+                XLSX.utils.book_append_sheet(wb, wsInventario, 'Inventario');
+            }
+
+            // Añadir hoja de Financiero si hay datos
+            if (transacciones.length > 0) {
+                const datosFinanciero = transacciones.map(({ id, ...rest }) => rest);
+                const wsFinanciero = XLSX.utils.json_to_sheet(datosFinanciero);
+                XLSX.utils.book_append_sheet(wb, wsFinanciero, 'Financiero');
+            }
+
+            // Descargar el archivo Excel
+            XLSX.writeFile(wb, 'Gestion_Inventario_Financiero.xlsx');
+        }
+
+        // Inicializar la tabla al cargar la página
+        actualizarTabla();
+
+        // ======== Funcionalidad de Escaneo de QR ========
+
+        let html5QrcodeScanner;
+
+        // Función para iniciar el escaneo de QR
+        function iniciarEscaneo() {
+            const qrReader = document.getElementById('qr-reader');
+            qrReader.style.display = 'block'; // Mostrar el área del lector QR
+
+            // Configuración del lector QR
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+
+            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                // Manejar el texto escaneado
+                document.getElementById('qr-input').value = decodedText;
+                alert('Código QR escaneado exitosamente: ' + decodedText);
+
+                // Detener el escaneo y ocultar el lector QR
+                html5QrcodeScanner.stop().then(ignore => {
+                    qrReader.style.display = 'none';
+                }).catch(err => {
+                    // Manejar errores al detener el escaneo
+                    console.error('Error al detener el escaneo QR:', err);
+                });
+            };
+
+            const config = { fps: 10, qrbox: 250 };
+
+            // Iniciar el escaneo
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // Configuración para usar la cámara trasera
+                config,
+                qrCodeSuccessCallback
+            ).catch(err => {
+                // Manejar errores al iniciar el escaneo
+                console.error('Error al iniciar el escaneo QR:', err);
+                alert('No se pudo iniciar el escaneo QR. Por favor, verifica los permisos de la cámara.');
+                qrReader.style.display = 'none';
+            });
+        }
+    </script>
+</body>
+</html>
